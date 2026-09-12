@@ -78,10 +78,13 @@ public final class FaceIDLockWindowManager: ObservableObject {
     }
 
     public func presentDynamicIslandNotch() {
-        if notchWindow == nil {
-            createNotchWindow(isEnrollment: false)
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if self.notchWindow == nil {
+                self.createNotchWindow(isEnrollment: false)
+            }
+            self.displayNotchWindow()
         }
-        displayNotchWindow()
     }
 
     private func displayNotchWindow() {
@@ -156,13 +159,14 @@ public final class FaceIDLockWindowManager: ObservableObject {
     }
 
     private func createNotchWindow(isEnrollment: Bool = false) {
-        let window = NSWindow(
+        let window = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 380, height: 140),
-            styleMask: [.borderless, .fullSizeContentView],
+            styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
 
+        window.isFloatingPanel = true
         window.isOpaque = false
         window.backgroundColor = .clear
         let maxLevel = NSWindow.Level(Int(CGWindowLevelForKey(.maximumWindow)))

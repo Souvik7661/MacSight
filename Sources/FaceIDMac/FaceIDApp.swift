@@ -127,29 +127,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self,
             selector: #selector(handleScreenWake),
             name: NSNotification.Name("com.apple.screenIsLocked"),
-            object: nil
+            object: nil,
+            suspensionBehavior: .deliverImmediately
         )
 
         distCenter.addObserver(
             self,
             selector: #selector(handleScreenWake),
             name: NSNotification.Name("com.apple.screensaver.didstop"),
-            object: nil
+            object: nil,
+            suspensionBehavior: .deliverImmediately
         )
 
         distCenter.addObserver(
             self,
             selector: #selector(handleScreenWake),
             name: NSNotification.Name("com.souvik.faceid.triggerNotch"),
-            object: nil
+            object: nil,
+            suspensionBehavior: .deliverImmediately
         )
 
         distCenter.addObserver(
             self,
             selector: #selector(handleScreenUnlocked),
             name: NSNotification.Name("com.apple.screenIsUnlocked"),
-            object: nil
+            object: nil,
+            suspensionBehavior: .deliverImmediately
         )
+
+        distCenter.addObserver(
+            self,
+            selector: #selector(handlePromptPassword),
+            name: NSNotification.Name("com.souvik.faceid.promptPassword"),
+            object: nil,
+            suspensionBehavior: .deliverImmediately
+        )
+    }
+
+    @objc private func handlePromptPassword() {
+        DispatchQueue.main.async {
+            SystemPasswordUnlocker.shared.promptToSavePassword()
+        }
     }
 
     @objc private func handleScreenWake() {
