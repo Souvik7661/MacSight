@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "cleanUrls": true,
   "headers": [
     {
@@ -25,22 +24,14 @@
       ]
     }
   ],
-  "routes": [
+  "rewrites": [
     {
-      "src": "^/install\\.sh$",
-      "dest": "/install.sh"
+      "source": "/download",
+      "destination": "/downloads/FaceIDMac.zip"
     },
     {
-      "src": "^/download$",
-      "dest": "/downloads/FaceIDMac.zip"
-    },
-    {
-      "src": "^/dmg$",
-      "dest": "/downloads/Face ID for Mac.dmg"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/dmg",
+      "destination": "/downloads/Face ID for Mac.dmg"
     }
   ]
 }

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apple Face ID for Mac | Your Face. Your Access. Down The Notch.</title>
+  <meta name="description" content="Native facial biometric recognition for macOS right beneath your camera notch. Automatic lock screen unlock, on-device AES-256-GCM encryption, and spring physics Dynamic Island HUD.">
+  <meta name="theme-color" content="#000000">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient-glow"></div>
+
+  <!-- Navigation Bar -->
+  <header class="site-header">
+    <div class="nav-container">
+      <a href="#" class="nav-logo" id="logoLink">
+        <div class="logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+            <circle cx="9" cy="9" r="1"></circle>
+            <circle cx="15" cy="9" r="1"></circle>
+            <path d="M10 15c.5.5 1.5 1 2 1s1.5-.5 2-1"></path>
+          </svg>
+        </div>
+        <span>Face ID for Mac</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#simulator">Live Simulator</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#terminal">Install</a></li>
+      </ul>
+
+      <a href="/downloads/FaceIDMac.zip" class="nav-btn" id="navDownloadBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span>Download</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero">
+      <div class="badge">
+        <span class="badge-dot"></span>
+        <span>Built for macOS Sonoma &amp; Sequoia (Apple Silicon &amp; Intel)</span>
+      </div>
+
+      <h1>
+        Face ID on Mac.
+        <span class="hero-highlight">Down the Notch.</span>
+      </h1>
+
+      <p>
+        Experience instant facial biometric authentication right beneath your MacBook camera notch. 
+        Zero bulky windows. 100% on-device AES-256 encryption. Automatic Mac lock screen unlock.
+      </p>
+
+      <!-- Primary Call-to-Actions -->
+      <div class="cta-group">
+        <a href="/downloads/FaceIDMac.zip" class="btn-primary" id="heroDownloadZip">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Download Face ID for Mac</span>
+        </a>
+
+        <a href="/downloads/Face ID for Mac.dmg" class="btn-secondary" id="heroDownloadDmg">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+          </svg>
+          <span>Download DMG Installer</span>
+        </a>
+      </div>
+
+      <!-- One-Click Terminal Install Card -->
+      <div class="terminal-card" id="terminal">
+        <div class="terminal-header">
+          <div class="terminal-dots">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+          </div>
+          <div class="terminal-title">bash — Quick Install</div>
+          <div style="width: 40px;"></div>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-cmd">
+            <span class="terminal-prompt">$</span>
+            <span id="terminalCmdText">curl -fsSL https://faceid-mac.vercel.app/install.sh | bash</span>
+          </div>
+          <button class="copy-btn" id="copyCmdBtn" title="Copy command to clipboard">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span>Copy</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive MacBook Notch Simulator -->
+    <section class="simulator-section" id="simulator">
+      <div class="macbook-bezel">
+        <div class="macbook-screen">
+          <div class="screen-tint"></div>
+
+          <!-- Physical Camera Notch -->
+          <div class="notch-housing">
+            <div class="camera-lens"></div>
+            <div class="camera-led" id="cameraLed"></div>
+          </div>
+
+          <!-- Dynamic Island HUD Drop-Down -->
+          <div class="dynamic-island" id="dynamicIsland">
+            <div class="island-inner">
+              <!-- Mini Scanner Viewfinder -->
+              <div class="island-scanner">
+                <div class="reticle-brackets"></div>
+                <div class="laser-beam"></div>
+              </div>
+
+              <!-- Details & Progress Column -->
+              <div class="island-details">
+                <div class="island-title" id="islandTitle">Face ID</div>
+                <div class="island-subtitle" id="islandSubtitle">Looking for you…</div>
+                <div class="island-progress-bar">
+                  <div class="island-progress-fill" id="islandProgress"></div>
+                </div>
+              </div>
+
+              <!-- Verified Morph Content -->
+              <div class="verified-ui">
+                <div class="verified-icon">✓</div>
+                <div>
+                  <div class="verified-text-title">Face ID Verified</div>
+                  <div class="verified-text-sub">Mac Unlocked</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Lock Screen Time & Padlock -->
+          <div class="lockscreen-content">
+            <div class="lock-time" id="lockTime">10:24</div>
+            <div class="lock-date" id="lockDate">Sunday, September 13</div>
+            <div class="lock-padlock" id="lockPadlock">&#128274;</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-controls">
+        <button class="sim-btn" id="testScanBtn">
+          <span>⚡</span>
+          <span>Test Notch Scan</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 3-Step Frictionless Flow -->
+    <section class="steps-section" id="how-it-works">
+      <div class="section-header">
+        <h2>How It Works</h2>
+        <p>No bulky apps or complex setup. 3 automated steps and your Mac is protected.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>PC Access</h3>
+          <p>
+            When first launched, Face ID asks for macOS Accessibility (PC Control) permission so it can automatically unlock your lock screen via synthesized keystrokes.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Camera Access</h3>
+          <p>
+            Face ID prompts for on-device camera access to analyze facial landmarks using Apple's Vision framework in real-time. Zero images leave your Mac.
+          </p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Active Down Notch</h3>
+          <p>
+            The Dynamic Island HUD drops down from your Mac's camera notch to quickly register your face. Now, whenever you lock your Mac (⌘L) or wake the screen, Face ID unlocks it instantly!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security & Architecture -->
+    <section class="features-section" id="security">
+      <div class="section-header">
+        <h2>Built with Apple Technologies</h2>
+        <p>Engineered for maximum speed, security, and hardware synergy.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h4>AES-256-GCM Vault</h4>
+          <p>Biometric vectors and passwords are encrypted with military-grade AES-256-GCM keyfiles using POSIX 0600 file permissions.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h4>Vision Neural Engine</h4>
+          <p>Hardware-accelerated landmark tracking extracts 64-dimensional normalized vectors in under 12 milliseconds.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">📳</div>
+          <h4>Trackpad Haptics</h4>
+          <p>Physical tactile feedback vibrates your MacBook trackpad with precision alignment and unlock clicks.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h4>100% On-Device</h4>
+          <p>Zero cloud servers, zero external telemetry. Your biometric data never leaves your local hardware.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-content">
+      <a href="#" class="footer-logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"></path>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"></path>
+            <path d="M21 17v2a2 2 0 0 1-2 2h-2"></path>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"></path>
+          </svg>
+        </div>
+        <span>Face ID for Mac</span>
+      </a>
+
+      <div class="footer-links">
+        <a href="/downloads/FaceIDMac.zip">Download ZIP</a>
+        <a href="/downloads/Face ID for Mac.dmg">Download DMG</a>
+        <a href="/install.sh">Install Script</a>
+        <a href="https://github.com" target="_blank" rel="noopener">GitHub</a>
+      </div>
+
+      <p class="footer-note">
+        Compatible with macOS Sonoma (14.0+) and macOS Sequoia (15.0+). Designed for Apple Silicon (M1/M2/M3/M4) and Intel Macs.
+      </p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
