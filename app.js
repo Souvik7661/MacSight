@@ -116,6 +116,10 @@ function initCopyButton() {
 
   if (!copyBtn || !cmdText) return;
 
+  if (window.location.origin && window.location.origin.startsWith('http') && !window.location.origin.includes('localhost')) {
+    cmdText.textContent = `curl -fsSL ${window.location.origin}/install.sh | bash`;
+  }
+
   copyBtn.addEventListener('click', () => {
     const textToCopy = cmdText.textContent.trim();
     navigator.clipboard.writeText(textToCopy).then(() => {

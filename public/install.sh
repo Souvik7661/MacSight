@@ -57,7 +57,7 @@ else
     if ! curl -fsSL "$ZIP_URL" -o "$TEMP_ZIP" 2>/dev/null; then
         echo -e "${YELLOW}[!] Downloading from primary portal...${NC}"
         # Fallback to direct host if provided
-        curl -fSL "https://raw.githubusercontent.com/souvikkundu/FaceId/main/public/downloads/FaceIDMac.zip" -o "$TEMP_ZIP" 2>/dev/null || true
+        curl -fSL "https://raw.githubusercontent.com/Souvik7661/MacSight/main/public/downloads/FaceIDMac.zip" -o "$TEMP_ZIP" 2>/dev/null || true
     fi
 fi
 
