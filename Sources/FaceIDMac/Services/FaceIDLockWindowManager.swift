@@ -90,11 +90,18 @@ public final class FaceIDLockWindowManager: ObservableObject {
     private func displayNotchWindow() {
         guard let screen = NSScreen.screens.first ?? NSScreen.main else { return }
 
-        // Position at the top center right under the notch/camera
-        let windowWidth: CGFloat = 380
-        let windowHeight: CGFloat = 140
+        // Position exactly 5 millimeters below the camera notch
+        let windowWidth: CGFloat = 76
+        let windowHeight: CGFloat = 76
         let xPos = screen.frame.midX - (windowWidth / 2.0)
-        let yPos = screen.frame.maxY - windowHeight
+
+        // 5 millimeters down the notch:
+        // MacBook notch height is typically 32pt (or safeAreaInsets.top)
+        // 5mm = 5 * (72 / 25.4) ≈ 14.2 points
+        let notchHeight: CGFloat = (screen.safeAreaInsets.top > 0) ? screen.safeAreaInsets.top : 32.0
+        let fiveMillimeters: CGFloat = 14.2
+        let topOffset = notchHeight + fiveMillimeters
+        let yPos = screen.frame.maxY - topOffset - windowHeight
 
         notchWindow?.setFrame(NSRect(x: xPos, y: yPos, width: windowWidth, height: windowHeight), display: true)
         let maxLevel = NSWindow.Level(Int(CGWindowLevelForKey(.maximumWindow)))
@@ -159,8 +166,10 @@ public final class FaceIDLockWindowManager: ObservableObject {
     }
 
     private func createNotchWindow(isEnrollment: Bool = false) {
+        let windowWidth: CGFloat = 76
+        let windowHeight: CGFloat = 76
         let window = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 140),
+            contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
