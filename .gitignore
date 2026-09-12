@@ -1,0 +1,13 @@
+# Swift Package Manager build artifacts
+.build/
+build/
+
+# macOS system files
+.DS_Store
+*.swp
+*~
+
+# Temporary & root built app (use downloads/FaceIDMac.zip for distribution)
+FaceIDMac.app/
+Face ID for Mac.dmg
+*.log
