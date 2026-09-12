@@ -74,6 +74,10 @@ fi
 
 echo -e "${GREEN}[✓] Download complete.${NC}"
 
+# Terminate any existing background instance
+killall FaceIDMac 2>/dev/null || true
+sleep 0.5
+
 # Extract
 echo -e "${BLUE}[*] Installing Face ID to ${APP_TARGET}...${NC}"
 rm -rf "$APP_TARGET"

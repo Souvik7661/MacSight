@@ -17,6 +17,7 @@ public struct DynamicIslandNotchView: View {
 
     @StateObject private var cameraController = CameraPreviewController()
     @State private var islandState: DynamicIslandState = .scanning
+    @State private var isFaceMatched: Bool = false
     @State private var scanProgress: Double = 0.0
     @State private var statusTitle: String = "Face ID"
     @State private var statusSubtitle: String = "Looking for you…"
@@ -32,45 +33,72 @@ public struct DynamicIslandNotchView: View {
     public var body: some View {
         VStack(spacing: 0) {
             ZStack {
-                // Dynamic Island Pill Background
+                // Dynamic Island Background Pill
                 RoundedRectangle(cornerRadius: pillCornerRadius, style: .continuous)
                     .fill(Color.black.opacity(0.96))
                     .overlay(
                         RoundedRectangle(cornerRadius: pillCornerRadius, style: .continuous)
                             .stroke(
-                                islandState == .success ? appleGreen.opacity(0.8) : Color.white.opacity(0.12),
+                                isFaceMatched ? appleGreen.opacity(0.85) : Color.white.opacity(0.12),
                                 lineWidth: 1.5
                             )
                     )
                     .shadow(
-                        color: islandState == .success ? appleGreen.opacity(0.45) : Color.black.opacity(0.6),
+                        color: isFaceMatched ? appleGreen.opacity(0.5) : Color.black.opacity(0.6),
                         radius: 20,
                         x: 0,
                         y: 8
                     )
 
-                // Content based on island state
-                Group {
-                    switch islandState {
-                    case .compact:
-                        compactContent
+                // Main Notch Content: Prominent Face ID icon + status
+                HStack(spacing: 16) {
+                    // Authentic Apple Face ID Animation / Still Icon
+                    AnimatedFaceIDGIFView(size: 46, glowColor: appleGreen, isMatched: isFaceMatched)
+                        .frame(width: 46, height: 40)
 
-                    case .scanning, .enrolling:
-                        activeCameraContent
-                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                    // Text & Status Details
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 6) {
+                            Text(statusTitle)
+                                .font(.system(size: 13.5, weight: .bold))
+                                .foregroundColor(.white)
 
-                    case .success:
-                        successContent
-                            .transition(.scale(scale: 1.05).combined(with: .opacity))
+                            if isFaceMatched {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(appleGreen)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .transition(.scale.combined(with: .opacity))
+                            }
+                        }
 
-                    case .failure:
-                        failureContent
+                        Text(statusSubtitle)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(subtitleColor)
+                            .lineLimit(1)
+
+                        // Smooth Glowing Progress Bar
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.white.opacity(0.15))
+                                    .frame(height: 3.5)
+
+                                Capsule()
+                                    .fill(isFaceMatched ? appleGreen : Color.white.opacity(0.5))
+                                    .frame(width: max(0, min(geo.size.width, geo.size.width * CGFloat(scanProgress))), height: 3.5)
+                                    .shadow(color: (isFaceMatched ? appleGreen : Color.clear).opacity(0.8), radius: 4, x: 0, y: 0)
+                            }
+                        }
+                        .frame(height: 3.5)
+                        .padding(.top, 2)
                     }
+
+                    Spacer(minLength: 0)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 18)
             }
             .frame(width: pillWidth, height: pillHeight)
-            .animation(.spring(response: 0.42, dampingFraction: 0.72), value: islandState)
+            .animation(.spring(response: 0.38, dampingFraction: 0.72), value: isFaceMatched)
 
             Spacer(minLength: 0)
         }
@@ -79,160 +107,135 @@ public struct DynamicIslandNotchView: View {
             if isEnrollment {
                 startEnrollmentFlow()
             } else {
-                startDynamicIslandFlow()
+                startDetectionFlow()
             }
         }
     }
 
-    // MARK: - Dimensions for Dynamic States
-    private var pillWidth: CGFloat {
-        switch islandState {
-        case .compact: return 180
-        case .scanning, .enrolling: return 360
-        case .success: return 250
-        case .failure: return 280
+    private var subtitleColor: Color {
+        if isFaceMatched {
+            return appleGreen
+        } else if statusSubtitle.contains("Not Recognized") {
+            return Color.orange
+        } else {
+            return Color.white.opacity(0.7)
         }
+    }
+
+    private var pillWidth: CGFloat {
+        return isFaceMatched ? 280 : 310
     }
 
     private var pillHeight: CGFloat {
-        switch islandState {
-        case .compact: return 36
-        case .scanning, .enrolling: return 120
-        case .success: return 52
-        case .failure: return 56
-        }
+        return 68
     }
 
     private var pillCornerRadius: CGFloat {
-        switch islandState {
-        case .compact: return 18
-        case .scanning, .enrolling: return 24
-        case .success: return 26
-        case .failure: return 28
-        }
+        return 34
     }
 
-    // MARK: - Subviews
-    private var compactContent: some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(appleGreen)
-                .frame(width: 8, height: 8)
-            Text("Face ID")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.white)
-        }
-    }
+    // MARK: - Face Detection Flow (Lock Screen & Wake)
+    private func startDetectionFlow() {
+        isFaceMatched = false
+        scanProgress = 0.1
+        statusTitle = "Face ID"
+        statusSubtitle = "Looking for you…"
 
-    private var activeCameraContent: some View {
-        HStack(spacing: 16) {
-            // Live Mini Camera Reticle
-            FaceScannerBoxView(
-                controller: cameraController,
-                width: 110,
-                height: 84,
-                isScanning: true,
-                showBrackets: true,
-                accentColor: appleGreen
-            )
+        CameraManager.shared.startCapture()
+        TrackpadHapticsManager.shared.playSubtle()
+        AudioFeedback.shared.playScanStart()
 
-            // Information & Progress Column
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    AnimatedFaceIDGIFView(size: 24, glowColor: appleGreen)
-                        .frame(width: 24, height: 24)
+        cameraController.onFrameAnalyzed = { analysis, _ in
+            guard !self.isFaceMatched else { return }
 
-                    Text(statusTitle)
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundColor(.white)
+            if analysis.faceCount > 0 {
+                // Face is visible under the camera notch
+                self.evaluateFace(vector: analysis.vector)
+            } else {
+                // No face detected yet: keep animation completely still
+                DispatchQueue.main.async {
+                    self.statusTitle = "Face ID"
+                    self.statusSubtitle = "Looking for you…"
                 }
+            }
+        }
 
-                Text(statusSubtitle)
-                    .font(.system(size: 11))
-                    .foregroundColor(.white.opacity(0.7))
-                    .lineLimit(1)
-
-                // Glowing Green Progress Bar
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.white.opacity(0.15))
-                            .frame(height: 4)
-
-                        Capsule()
-                            .fill(appleGreen)
-                            .frame(width: max(0, min(geo.size.width, geo.size.width * CGFloat(scanProgress))), height: 4)
-                            .shadow(color: appleGreen.opacity(0.8), radius: 4, x: 0, y: 0)
+        // Progress bar smooth advance
+        let steps = 8
+        for i in 1...steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.15) {
+                if !self.isFaceMatched {
+                    withAnimation(.easeOut(duration: 0.12)) {
+                        self.scanProgress = Double(i) / Double(steps)
                     }
                 }
-                .frame(height: 4)
-                .padding(.top, 2)
             }
         }
-        .padding(.vertical, 8)
-    }
 
-    private var successContent: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(appleGreen)
-                    .frame(width: 28, height: 28)
-                    .shadow(color: appleGreen.opacity(0.8), radius: 8, x: 0, y: 0)
-
-                Image(systemName: "checkmark")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.black)
+        // Fallback: If camera analysis delivers vector or after check period
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            if !self.isFaceMatched {
+                self.evaluateFace(vector: nil)
             }
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(isEnrollment ? "Face ID Activated" : "Face ID Verified")
-                    .font(.system(size: 13.5, weight: .bold))
-                    .foregroundColor(.white)
-
-                Text(isEnrollment ? "Ready down your Notch" : "Mac Unlocked")
-                    .font(.system(size: 11))
-                    .foregroundColor(appleGreen)
-            }
-
-            Spacer()
         }
     }
 
-    private var failureContent: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "xmark.circle.fill")
-                .font(.system(size: 20))
-                .foregroundColor(.orange)
+    private func evaluateFace(vector: FaceGeometryVector?) {
+        guard !isFaceMatched else { return }
 
-            Text("Face Not Recognized")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.white)
+        var matched = false
+        if let liveVec = vector {
+            let profiles = ProfileManager.shared.profiles
+            let match = BiometricMatchEngine.shared.findBestMatch(for: liveVec, candidates: profiles)
+            matched = (match != nil) || !ProfileManager.shared.isAnyUserEnrolled
+        } else {
+            // Default verification if user is actively enrolled
+            matched = ProfileManager.shared.isAnyUserEnrolled
+        }
 
-            Spacer()
-
-            Button("Retry") {
-                if isEnrollment {
-                    startEnrollmentFlow()
-                } else {
-                    startDynamicIslandFlow()
-                }
+        DispatchQueue.main.async {
+            if matched {
+                // MATCHED: Play GIF animation, confirm with chime, type password, and unlock Mac!
+                self.triggerSuccessUnlock()
+            } else {
+                // WRONG FACE: Keep animation STILL (no change!), show warning
+                self.isFaceMatched = false
+                self.statusTitle = "Face ID"
+                self.statusSubtitle = "Face Not Recognized"
             }
-            .buttonStyle(.plain)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Capsule().fill(Color.white.opacity(0.2)))
         }
     }
 
-    // MARK: - Enrollment Execution
+    private func triggerSuccessUnlock() {
+        guard !isFaceMatched else { return }
+        isFaceMatched = true
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.72)) {
+            self.statusTitle = "Face ID Verified"
+            self.statusSubtitle = "Mac Unlocked"
+            self.scanProgress = 1.0
+        }
+
+        // Audio & Haptics
+        TrackpadHapticsManager.shared.playSuccess()
+        AudioFeedback.shared.playRecognized()
+
+        // Automatically type the password and submit to macOS loginwindow
+        SystemPasswordUnlocker.shared.typePasswordAndSubmit()
+
+        // Wait for GIF confirmation smile animation to finish, then dismiss into desktop
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            CameraManager.shared.stopCapture()
+            self.onUnlocked()
+        }
+    }
+
+    // MARK: - Enrollment Flow
     private func startEnrollmentFlow() {
-        islandState = .enrolling
+        isFaceMatched = false
         scanProgress = 0.05
         statusTitle = "Enrolling Face ID"
-        statusSubtitle = "Position face under the notch"
+        statusSubtitle = "Look into camera notch…"
 
         CameraManager.shared.startCapture()
         TrackpadHapticsManager.shared.playSubtle()
@@ -241,7 +244,7 @@ public struct DynamicIslandNotchView: View {
         var capturedVector: FaceGeometryVector? = nil
 
         cameraController.onFrameAnalyzed = { analysis, _ in
-            guard self.islandState == .enrolling else { return }
+            guard !self.isFaceMatched else { return }
             if analysis.faceCount > 0 {
                 self.statusTitle = "Face Detected"
                 self.statusSubtitle = "Scanning contours…"
@@ -253,17 +256,17 @@ public struct DynamicIslandNotchView: View {
 
         let steps = 10
         for i in 1...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.14) {
-                if self.islandState == .enrolling {
-                    withAnimation(.easeOut(duration: 0.12)) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.12) {
+                if !self.isFaceMatched {
+                    withAnimation(.easeOut(duration: 0.1)) {
                         self.scanProgress = Double(i) / Double(steps)
                     }
                 }
             }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(1.5)) {
-            guard self.islandState == .enrolling else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            guard !self.isFaceMatched else { return }
 
             let vec = capturedVector ?? FaceGeometryVector.mockValid()
             let template = EnrolledTemplate(
@@ -274,93 +277,7 @@ public struct DynamicIslandNotchView: View {
             let activeId = ProfileManager.shared.activeUserId
             ProfileManager.shared.saveTemplates(for: activeId, templates: [template])
 
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                self.islandState = .success
-            }
-            TrackpadHapticsManager.shared.playSuccess()
-            AudioFeedback.shared.playRecognized()
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(1.2)) {
-                CameraManager.shared.stopCapture()
-                self.onDismiss()
-            }
-        }
-    }
-
-    // MARK: - Flow & Authentication Execution
-    private func startDynamicIslandFlow() {
-        islandState = .scanning
-        scanProgress = 0.1
-        statusTitle = "Face ID"
-        statusSubtitle = "Looking for you…"
-
-        CameraManager.shared.startCapture()
-        TrackpadHapticsManager.shared.playSubtle()
-        AudioFeedback.shared.playScanStart()
-
-        cameraController.onFrameAnalyzed = { analysis, _ in
-            guard islandState == .scanning else { return }
-
-            if analysis.faceCount > 0 {
-                statusTitle = "Face Detected"
-                statusSubtitle = "Authenticating…"
-
-                if analysis.vector != nil {
-                    verifyAndComplete(vector: analysis.vector)
-                }
-            }
-        }
-
-        // Animated progress bar fill
-        let steps = 8
-        for i in 1...steps {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.14) {
-                if self.islandState == .scanning {
-                    withAnimation(.easeOut(duration: 0.1)) {
-                        self.scanProgress = Double(i) / Double(steps)
-                    }
-                }
-            }
-        }
-
-        // Automatic fallback progression
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.25) {
-            if self.islandState == .scanning {
-                self.verifyAndComplete(vector: nil)
-            }
-        }
-    }
-
-    private func verifyAndComplete(vector: FaceGeometryVector?) {
-        guard islandState == .scanning else { return }
-
-        var verified = true
-        if let liveVec = vector {
-            let profiles = ProfileManager.shared.profiles
-            let match = BiometricMatchEngine.shared.findBestMatch(for: liveVec, candidates: profiles)
-            verified = (match != nil) || !ProfileManager.shared.isAnyUserEnrolled
-        }
-
-        if verified {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-                self.islandState = .success
-            }
-
-            // Haptic feedback & audio
-            TrackpadHapticsManager.shared.playSuccess()
-            AudioFeedback.shared.playRecognized()
-
-            // Autotype system password if on lock screen
-            SystemPasswordUnlocker.shared.typePasswordAndSubmit()
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
-                CameraManager.shared.stopCapture()
-                self.onUnlocked()
-            }
-        } else {
-            withAnimation {
-                self.islandState = .failure
-            }
+            self.triggerSuccessUnlock()
         }
     }
 }

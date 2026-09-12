@@ -1,104 +1,130 @@
 import SwiftUI
-import WebKit
 import AppKit
+import ImageIO
 
 public struct AnimatedFaceIDGIFView: View {
     public var size: CGFloat
     public var glowColor: Color
+    public var isMatched: Bool
 
-    public init(size: CGFloat = 110, glowColor: Color = Color.green) {
+    public init(size: CGFloat = 44, glowColor: Color = Color(red: 0.19, green: 0.82, blue: 0.35), isMatched: Bool = false) {
         self.size = size
         self.glowColor = glowColor
+        self.isMatched = isMatched
     }
 
     public var body: some View {
         ZStack {
-            // Ambient soft glow behind animation
+            // Subtle ambient glow
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [glowColor.opacity(0.22), Color.clear],
+                        colors: [
+                            (isMatched ? glowColor : Color.white).opacity(isMatched ? 0.35 : 0.08),
+                            Color.clear
+                        ],
                         center: .center,
-                        startRadius: 10,
+                        startRadius: size * 0.2,
                         endRadius: size * 0.75
                     )
                 )
-                .frame(width: size * 1.5, height: size * 1.5)
+                .frame(width: size * 1.4, height: size * 1.4)
 
-            // Transparent animated GIF webview player
-            FaceIDGIFWebView()
+            // Native AppKit Face ID GIF View: Still on wrong/detecting, animated on match
+            FaceIDNativeGIFRepresentable(size: size, isMatched: isMatched)
                 .frame(width: size, height: size * (126.0 / 150.0))
         }
     }
 }
 
-// MARK: - Native WebKit Transparent GIF Engine
-struct FaceIDGIFWebView: NSViewRepresentable {
-    func makeNSView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        let webView = WKWebView(frame: .zero, configuration: config)
-        webView.setValue(false, forKey: "drawsBackground")
-        webView.underPageBackgroundColor = .clear
+// MARK: - Native AppKit Representable
+struct FaceIDNativeGIFRepresentable: NSViewRepresentable {
+    var size: CGFloat
+    var isMatched: Bool
 
-        loadGIF(into: webView)
-        return webView
+    func makeNSView(context: Context) -> FaceIDNativeGIFNSView {
+        let view = FaceIDNativeGIFNSView(frame: NSRect(x: 0, y: 0, width: size, height: size * (126.0 / 150.0)))
+        view.setMatched(isMatched)
+        return view
     }
 
-    func updateNSView(_ nsView: WKWebView, context: Context) {
-        // Continuous playback handled by WebKit
+    func updateNSView(_ nsView: FaceIDNativeGIFNSView, context: Context) {
+        nsView.setMatched(isMatched)
+    }
+}
+
+// MARK: - Native AppKit View with Static & Animated Modes
+final class FaceIDNativeGIFNSView: NSView {
+    private let imageView = NSImageView()
+    private var isPlaying: Bool = false
+    private var gifData: Data?
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        setup()
     }
 
-    private func loadGIF(into webView: WKWebView) {
-        // Attempt locating the GIF file in various bundle / directory locations
-        var gifData: Data? = nil
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        setup()
+    }
 
-        let searchURLs = [
-            Bundle.module.url(forResource: "Apple Face ID", withExtension: "gif"),
+    private func setup() {
+        imageView.imageScaling = .scaleProportionallyUpOrDown
+        imageView.autoresizingMask = [.width, .height]
+        imageView.frame = bounds
+        addSubview(imageView)
+        loadData()
+        updateDisplay(matched: false)
+    }
+
+    func setMatched(_ matched: Bool) {
+        if matched != isPlaying {
+            isPlaying = matched
+            updateDisplay(matched: matched)
+        }
+    }
+
+    private func updateDisplay(matched: Bool) {
+        guard let data = gifData ?? loadData() else { return }
+
+        if matched {
+            // MATCHED: Play authentic Apple Face ID animation GIF!
+            if let animatedImg = NSImage(data: data) {
+                imageView.image = animatedImg
+                imageView.animates = true
+            }
+        } else {
+            // STILL / WRONG FACE: Keep animation still, NO change!
+            if let source = CGImageSourceCreateWithData(data as CFData, nil),
+               let cg = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+                let stillImg = NSImage(cgImage: cg, size: NSSize(width: 150, height: 126))
+                imageView.image = stillImg
+                imageView.animates = false
+            }
+        }
+    }
+
+    @discardableResult
+    private func loadData() -> Data? {
+        if let d = gifData { return d }
+
+        let searchURLs: [URL?] = [
             Bundle.main.url(forResource: "Apple Face ID", withExtension: "gif"),
-            URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("Sources/FaceIDMac/Resources/Apple Face ID.gif"),
+            Bundle.module.url(forResource: "Apple Face ID", withExtension: "gif"),
+            Bundle.main.resourceURL?.appendingPathComponent("Apple Face ID.gif"),
+            Bundle.main.resourceURL?.appendingPathComponent("FaceIDMac_FaceIDMac.bundle/Apple Face ID.gif"),
+            URL(fileURLWithPath: "/Users/souvikkundu/Applications/FaceIDMac.app/Contents/Resources/Apple Face ID.gif"),
+            URL(fileURLWithPath: "/Users/souvikkundu/Desktop/FaceId/Apple Face ID.gif"),
             URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("Apple Face ID.gif")
         ]
 
         for url in searchURLs.compactMap({ $0 }) {
-            if let data = try? Data(contentsOf: url), !data.isEmpty {
-                gifData = data
-                break
+            if let d = try? Data(contentsOf: url), !d.isEmpty {
+                self.gifData = d
+                return d
             }
         }
-
-        if let data = gifData {
-            let base64 = data.base64EncodedString()
-            let html = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                html, body {
-                    background: transparent;
-                    width: 100%;
-                    height: 100%;
-                    overflow: hidden;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: contain;
-                    display: block;
-                    filter: drop-shadow(0 4px 12px rgba(48, 209, 88, 0.25));
-                }
-            </style>
-            </head>
-            <body>
-                <img src="data:image/gif;base64,\(base64)" alt="Face ID" />
-            </body>
-            </html>
-            """
-            webView.loadHTMLString(html, baseURL: nil)
-        }
+        return nil
     }
 }

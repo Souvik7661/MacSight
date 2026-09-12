@@ -53,7 +53,10 @@ public struct FaceIDMenuBarContent: View {
             Button(action: {
                 PasswordSetupHelper.promptForPassword()
             }) {
-                Label("Set Lock Screen Password…", systemImage: "key.fill")
+                Label(
+                    SystemPasswordUnlocker.shared.hasSavedPassword() ? "Change Mac Password" : "⚠️ Set Mac Password (Auto-Unlock)",
+                    systemImage: SystemPasswordUnlocker.shared.hasSavedPassword() ? "key.fill" : "exclamationmark.triangle.fill"
+                )
             }
 
             Button(action: {

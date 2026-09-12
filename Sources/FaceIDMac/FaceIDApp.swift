@@ -50,29 +50,19 @@ public final class SettingsWindowManager {
 
 public final class PasswordSetupHelper {
     public static func promptForPassword() {
-        let alert = NSAlert()
-        alert.messageText = "Set Lock Screen Password"
-        alert.informativeText = "Enter your Mac account password so Face ID can automatically unlock your Mac down the notch. Stored securely in a local AES-256-GCM encrypted vault."
-        alert.alertStyle = .informational
-        let input = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-        input.placeholderString = "Mac login password"
-        alert.accessoryView = input
-        alert.addButton(withTitle: "Save Password")
-        alert.addButton(withTitle: "Cancel")
-        NSApp.activate(ignoringOtherApps: true)
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            let pwd = input.stringValue
-            if !pwd.isEmpty {
-                _ = SystemPasswordUnlocker.shared.savePassword(pwd)
-            }
-        }
+        SystemPasswordUnlocker.shared.promptToSavePassword()
     }
 }
 
 // MARK: - App Delegate for Background Notch Daemon
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Enforce single instance
+        let runningApps = NSRunningApplication.runningApplications(withBundleIdentifier: Bundle.main.bundleIdentifier ?? "com.souvik.faceid")
+        for app in runningApps where app.processIdentifier != ProcessInfo.processInfo.processIdentifier {
+            app.terminate()
+        }
+
         // Run as background accessory (No Dock icon, pure notch daemon)
         NSApp.setActivationPolicy(.accessory)
 
@@ -84,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setupLockScreenListeners()
 
         // Begin Onboarding Sequence:
-        // 1. Accessibility (PC Control) -> 2. Camera Access -> 3. Notch Dynamic Island Enrollment
+        // 1. Accessibility (PC Control) -> 2. Camera Access -> 3. Password Setup -> 4. Notch Dynamic Island
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             self.startOnboardingSequence()
         }
@@ -99,39 +89,62 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AVCaptureDevice.requestAccess(for: .video) { granted in
             DispatchQueue.main.async {
                 // Step 3: Implement Face ID down the notch!
-                // If not enrolled yet, drop down notch for instant enrollment
                 if !ProfileManager.shared.isAnyUserEnrolled {
                     FaceIDLockWindowManager.shared.presentNotchEnrollment()
+                }
+
+                // Step 4: If password is not saved yet, prompt user so Face ID can auto-unlock
+                if !SystemPasswordUnlocker.shared.hasSavedPassword() {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        SystemPasswordUnlocker.shared.promptToSavePassword()
+                    }
                 }
             }
         }
     }
 
     private func setupLockScreenListeners() {
+        let wsCenter = NSWorkspace.shared.notificationCenter
+        let distCenter = DistributedNotificationCenter.default()
+
         // Screen Sleep & Wake observers
-        NSWorkspace.shared.notificationCenter.addObserver(
+        wsCenter.addObserver(
             self,
             selector: #selector(handleScreenWake),
             name: NSWorkspace.screensDidWakeNotification,
             object: nil
         )
 
-        // Distributed notifications for macOS lock/unlock
-        DistributedNotificationCenter.default().addObserver(
+        wsCenter.addObserver(
+            self,
+            selector: #selector(handleScreenWake),
+            name: NSWorkspace.sessionDidBecomeActiveNotification,
+            object: nil
+        )
+
+        // Distributed notifications for macOS lock/unlock & screensaver
+        distCenter.addObserver(
             self,
             selector: #selector(handleScreenWake),
             name: NSNotification.Name("com.apple.screenIsLocked"),
             object: nil
         )
 
-        DistributedNotificationCenter.default().addObserver(
+        distCenter.addObserver(
+            self,
+            selector: #selector(handleScreenWake),
+            name: NSNotification.Name("com.apple.screensaver.didstop"),
+            object: nil
+        )
+
+        distCenter.addObserver(
             self,
             selector: #selector(handleScreenWake),
             name: NSNotification.Name("com.souvik.faceid.triggerNotch"),
             object: nil
         )
 
-        DistributedNotificationCenter.default().addObserver(
+        distCenter.addObserver(
             self,
             selector: #selector(handleScreenUnlocked),
             name: NSNotification.Name("com.apple.screenIsUnlocked"),
@@ -141,13 +154,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func handleScreenWake() {
         // When screen wakes up, present Dynamic Island down the notch
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             FaceIDLockWindowManager.shared.presentDynamicIslandNotch()
         }
-    }
-
-    @objc private func handleScreenLocked() {
-        // When Mac locks, prepare Face ID
     }
 
     @objc private func handleScreenUnlocked() {

@@ -94,7 +94,8 @@ public final class FaceIDLockWindowManager: ObservableObject {
         let yPos = screen.frame.maxY - windowHeight
 
         notchWindow?.setFrame(NSRect(x: xPos, y: yPos, width: windowWidth, height: windowHeight), display: true)
-        notchWindow?.level = .screenSaver
+        let maxLevel = NSWindow.Level(Int(CGWindowLevelForKey(.maximumWindow)))
+        notchWindow?.level = maxLevel
         NSApp.activate(ignoringOtherApps: true)
         notchWindow?.orderFrontRegardless()
         notchWindow?.alphaValue = 1.0
@@ -131,7 +132,8 @@ public final class FaceIDLockWindowManager: ObservableObject {
 
         window.isOpaque = true
         window.backgroundColor = .black
-        window.level = .screenSaver
+        let maxLevel = NSWindow.Level(Int(CGWindowLevelForKey(.maximumWindow)))
+        window.level = maxLevel
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         window.isMovable = false
 
@@ -163,10 +165,13 @@ public final class FaceIDLockWindowManager: ObservableObject {
 
         window.isOpaque = false
         window.backgroundColor = .clear
-        window.level = .screenSaver
+        let maxLevel = NSWindow.Level(Int(CGWindowLevelForKey(.maximumWindow)))
+        window.level = maxLevel
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         window.isMovable = false
         window.hasShadow = false
+        window.canHide = false
+        window.hidesOnDeactivate = false
 
         let rootView = DynamicIslandNotchView(
             isEnrollment: isEnrollment,
