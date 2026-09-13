@@ -29,11 +29,8 @@ chmod +x "$MACOS_DIR/$APP_NAME"
 cp "$ROOT_DIR/Support/Info.plist" "$CONTENTS_DIR/Info.plist"
 
 # Copy Resources
-cp "$ROOT_DIR/Sources/FaceIDMac/Resources/AppIcon.icns" "$RESOURCES_DIR/AppIcon.icns" 2>/dev/null || true
-cp "$ROOT_DIR/Sources/FaceIDMac/Resources/player.html" "$RESOURCES_DIR/player.html"
-cp "$ROOT_DIR/Sources/FaceIDMac/Resources/AppleFaceID.json" "$RESOURCES_DIR/AppleFaceID.json"
-cp "$ROOT_DIR/Sources/FaceIDMac/Resources/lottie.min.js" "$RESOURCES_DIR/lottie.min.js"
-cp "$ROOT_DIR/Sources/FaceIDMac/Resources/Apple Face ID.gif" "$RESOURCES_DIR/Apple Face ID.gif" 2>/dev/null || true
+cp -R "$ROOT_DIR/Sources/FaceIDMac/Resources/"* "$RESOURCES_DIR/" 2>/dev/null || true
+cp "$ROOT_DIR/Apple Face ID.gif" "$RESOURCES_DIR/Apple Face ID.gif" 2>/dev/null || true
 
 # Copy SPM Resource Bundle if generated
 if [ -d "$ROOT_DIR/.build/release/FaceIDMac_FaceIDMac.bundle" ]; then

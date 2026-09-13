@@ -20,29 +20,29 @@ public struct DynamicIslandNotchView: View {
 
     public var body: some View {
         ZStack {
-            // Sleek Face ID Squircle matching Picture 2
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            // Sleek Apple Face ID Squircle from Picture 2 (Enhanced Bigger Size: 82x82)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
                 .fill(Color.black.opacity(0.96))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .stroke(
                             isFaceMatched ? appleGreen.opacity(0.95) : Color.white.opacity(0.18),
-                            lineWidth: 1.5
+                            lineWidth: 1.8
                         )
                 )
                 .shadow(
-                    color: isFaceMatched ? appleGreen.opacity(0.65) : Color.black.opacity(0.6),
-                    radius: isFaceMatched ? 14 : 6,
+                    color: isFaceMatched ? appleGreen.opacity(0.7) : Color.black.opacity(0.6),
+                    radius: isFaceMatched ? 16 : 8,
                     x: 0,
                     y: 4
                 )
 
             // Authentic Apple Face ID Animation
             // Still on detecting/wrong face, animated GIF on match!
-            AnimatedFaceIDGIFView(size: 46, glowColor: appleGreen, isMatched: isFaceMatched)
-                .frame(width: 46, height: 40)
+            AnimatedFaceIDGIFView(size: 76, glowColor: appleGreen, isMatched: isFaceMatched)
+                .frame(width: 76, height: 76)
         }
-        .frame(width: 62, height: 62)
+        .frame(width: 82, height: 82)
         .animation(.spring(response: 0.35, dampingFraction: 0.72), value: isFaceMatched)
         .onAppear {
             if isEnrollment {
@@ -69,10 +69,18 @@ public struct DynamicIslandNotchView: View {
             }
         }
 
-        // Automatic fallback evaluation
+        // Automatic evaluation check
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             if !self.isFaceMatched {
                 self.evaluateFace(vector: nil)
+            }
+        }
+
+        // AUTO-DISMISS TIMEOUT: If not matched within 3.8 seconds, cleanly dismiss from screen
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.8) {
+            if !self.isFaceMatched {
+                CameraManager.shared.stopCapture()
+                self.onDismiss()
             }
         }
     }
@@ -110,8 +118,8 @@ public struct DynamicIslandNotchView: View {
         // Automatically type the stored password into macOS loginwindow
         SystemPasswordUnlocker.shared.typePasswordAndSubmit()
 
-        // Give the full GIF animation time to confirm and smile, then dismiss into desktop
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+        // Give the full GIF animation time to confirm, then dismiss cleanly into desktop
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
             CameraManager.shared.stopCapture()
             self.onUnlocked()
         }

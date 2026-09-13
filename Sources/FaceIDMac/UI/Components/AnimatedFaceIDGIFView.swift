@@ -28,11 +28,11 @@ public struct AnimatedFaceIDGIFView: View {
                         endRadius: size * 0.75
                     )
                 )
-                .frame(width: size * 1.4, height: size * 1.4)
+                .frame(width: size * 1.3, height: size * 1.3)
 
             // Native AppKit Face ID GIF View: Still on wrong/detecting, animated on match
             FaceIDNativeGIFRepresentable(size: size, isMatched: isMatched)
-                .frame(width: size, height: size * (126.0 / 150.0))
+                .frame(width: size, height: size)
         }
     }
 }
@@ -43,7 +43,7 @@ struct FaceIDNativeGIFRepresentable: NSViewRepresentable {
     var isMatched: Bool
 
     func makeNSView(context: Context) -> FaceIDNativeGIFNSView {
-        let view = FaceIDNativeGIFNSView(frame: NSRect(x: 0, y: 0, width: size, height: size * (126.0 / 150.0)))
+        let view = FaceIDNativeGIFNSView(frame: NSRect(x: 0, y: 0, width: size, height: size))
         view.setMatched(isMatched)
         return view
     }
@@ -57,7 +57,8 @@ struct FaceIDNativeGIFRepresentable: NSViewRepresentable {
 final class FaceIDNativeGIFNSView: NSView {
     private let imageView = NSImageView()
     private var isPlaying: Bool = false
-    private var gifData: Data?
+    private var matchData: Data?
+    private var stillData: Data?
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -86,45 +87,64 @@ final class FaceIDNativeGIFNSView: NSView {
     }
 
     private func updateDisplay(matched: Bool) {
-        guard let data = gifData ?? loadData() else { return }
+        loadData()
 
         if matched {
-            // MATCHED: Play authentic Apple Face ID animation GIF!
-            if let animatedImg = NSImage(data: data) {
+            // MATCHED: Play authentic Apple Face ID animation GIF confirming match!
+            if let data = matchData, let animatedImg = NSImage(data: data) {
                 imageView.image = animatedImg
                 imageView.animates = true
             }
         } else {
             // STILL / WRONG FACE: Keep animation still, NO change!
-            if let source = CGImageSourceCreateWithData(data as CFData, nil),
-               let cg = CGImageSourceCreateImageAtIndex(source, 0, nil) {
-                let stillImg = NSImage(cgImage: cg, size: NSSize(width: 150, height: 126))
+            if let data = stillData, let stillImg = NSImage(data: data) {
+                imageView.image = stillImg
+                imageView.animates = false
+            } else if let data = matchData,
+                      let source = CGImageSourceCreateWithData(data as CFData, nil),
+                      let cg = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+                let stillImg = NSImage(cgImage: cg, size: NSSize(width: bounds.width, height: bounds.height))
                 imageView.image = stillImg
                 imageView.animates = false
             }
         }
     }
 
-    @discardableResult
-    private func loadData() -> Data? {
-        if let d = gifData { return d }
-
-        let searchURLs: [URL?] = [
-            Bundle.main.url(forResource: "Apple Face ID", withExtension: "gif"),
-            Bundle.module.url(forResource: "Apple Face ID", withExtension: "gif"),
-            Bundle.main.resourceURL?.appendingPathComponent("Apple Face ID.gif"),
-            Bundle.main.resourceURL?.appendingPathComponent("FaceIDMac_FaceIDMac.bundle/Apple Face ID.gif"),
-            URL(fileURLWithPath: "/Users/souvikkundu/Applications/FaceIDMac.app/Contents/Resources/Apple Face ID.gif"),
-            URL(fileURLWithPath: "/Users/souvikkundu/Desktop/FaceId/Apple Face ID.gif"),
-            URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("Apple Face ID.gif")
-        ]
-
-        for url in searchURLs.compactMap({ $0 }) {
-            if let d = try? Data(contentsOf: url), !d.isEmpty {
-                self.gifData = d
-                return d
+    private func loadData() {
+        if stillData == nil {
+            let stillURLs: [URL?] = [
+                Bundle.main.url(forResource: "faceid_squircle_still", withExtension: "png"),
+                Bundle.module.url(forResource: "faceid_squircle_still", withExtension: "png"),
+                Bundle.main.resourceURL?.appendingPathComponent("faceid_squircle_still.png"),
+                Bundle.main.resourceURL?.appendingPathComponent("FaceIDMac_FaceIDMac.bundle/faceid_squircle_still.png"),
+                URL(fileURLWithPath: "/Users/souvikkundu/Applications/FaceIDMac.app/Contents/Resources/faceid_squircle_still.png"),
+                URL(fileURLWithPath: "/Users/souvikkundu/Desktop/FaceId/Sources/FaceIDMac/Resources/faceid_squircle_still.png")
+            ]
+            for url in stillURLs.compactMap({ $0 }) {
+                if let d = try? Data(contentsOf: url), !d.isEmpty {
+                    self.stillData = d
+                    break
+                }
             }
         }
-        return nil
+
+        if matchData == nil {
+            let matchURLs: [URL?] = [
+                Bundle.main.url(forResource: "faceid_squircle_match", withExtension: "gif"),
+                Bundle.module.url(forResource: "faceid_squircle_match", withExtension: "gif"),
+                Bundle.main.resourceURL?.appendingPathComponent("faceid_squircle_match.gif"),
+                Bundle.main.resourceURL?.appendingPathComponent("FaceIDMac_FaceIDMac.bundle/faceid_squircle_match.gif"),
+                URL(fileURLWithPath: "/Users/souvikkundu/Applications/FaceIDMac.app/Contents/Resources/faceid_squircle_match.gif"),
+                URL(fileURLWithPath: "/Users/souvikkundu/Desktop/FaceId/Sources/FaceIDMac/Resources/faceid_squircle_match.gif"),
+                Bundle.main.url(forResource: "Apple Face ID", withExtension: "gif"),
+                URL(fileURLWithPath: "/Users/souvikkundu/Desktop/FaceId/Apple Face ID.gif")
+            ]
+            for url in matchURLs.compactMap({ $0 }) {
+                if let d = try? Data(contentsOf: url), !d.isEmpty {
+                    self.matchData = d
+                    break
+                }
+            }
+        }
     }
 }

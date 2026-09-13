@@ -91,8 +91,8 @@ public final class FaceIDLockWindowManager: ObservableObject {
         guard let screen = NSScreen.screens.first ?? NSScreen.main else { return }
 
         // Position exactly 5 millimeters below the camera notch
-        let windowWidth: CGFloat = 76
-        let windowHeight: CGFloat = 76
+        let windowWidth: CGFloat = 96
+        let windowHeight: CGFloat = 96
         let xPos = screen.frame.midX - (windowWidth / 2.0)
 
         // 5 millimeters down the notch:
@@ -117,14 +117,16 @@ public final class FaceIDLockWindowManager: ObservableObject {
             guard let self = self else { return }
 
             NSAnimationContext.runAnimationGroup({ context in
-                context.duration = 0.3
+                context.duration = 0.25
                 self.lockWindow?.animator().alphaValue = 0
                 self.notchWindow?.animator().alphaValue = 0
             }, completionHandler: {
                 self.lockWindow?.orderOut(nil)
                 self.notchWindow?.orderOut(nil)
-                self.lockWindow?.alphaValue = 1.0
-                self.notchWindow?.alphaValue = 1.0
+                self.lockWindow?.close()
+                self.notchWindow?.close()
+                self.lockWindow = nil
+                self.notchWindow = nil
                 self.isLockWindowVisible = false
             })
         }
@@ -166,8 +168,8 @@ public final class FaceIDLockWindowManager: ObservableObject {
     }
 
     private func createNotchWindow(isEnrollment: Bool = false) {
-        let windowWidth: CGFloat = 76
-        let windowHeight: CGFloat = 76
+        let windowWidth: CGFloat = 96
+        let windowHeight: CGFloat = 96
         let window = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: windowWidth, height: windowHeight),
             styleMask: [.borderless, .nonactivatingPanel],
