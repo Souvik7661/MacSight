@@ -36,35 +36,33 @@ APP_TARGET="$INSTALL_DIR/FaceIDMac.app"
 # Determine Download URL
 SERVER_HOST="${FACEID_HOST:-}"
 if [[ -z "$SERVER_HOST" ]]; then
-    SERVER_HOST="https://faceid-mac.vercel.app"
+    SERVER_HOST="https://mac-sight.vercel.app"
 fi
 
 ZIP_URL="${SERVER_HOST}/downloads/FaceIDMac.zip"
 TEMP_ZIP="/tmp/FaceIDMac.zip"
+rm -f "$TEMP_ZIP" 2>/dev/null || true
 
-echo -e "${BLUE}[*] Downloading Face ID for Mac package...${NC}"
-
-# Check if local fallback package exists (if running script locally in repo)
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
-if [[ -f "$SCRIPT_DIR/downloads/FaceIDMac.zip" ]]; then
-    echo -e "${GREEN}[✓] Using local distribution bundle...${NC}"
-    cp "$SCRIPT_DIR/downloads/FaceIDMac.zip" "$TEMP_ZIP"
-elif [[ -f "$SCRIPT_DIR/../public/downloads/FaceIDMac.zip" ]]; then
-    echo -e "${GREEN}[✓] Using repository bundle...${NC}"
-    cp "$SCRIPT_DIR/../public/downloads/FaceIDMac.zip" "$TEMP_ZIP"
-else
-    # Download over HTTP
-    if ! curl -fsSL "$ZIP_URL" -o "$TEMP_ZIP" 2>/dev/null; then
-        echo -e "${YELLOW}[!] Downloading from primary portal...${NC}"
-        # Fallback to direct host if provided
-        curl -fSL "https://raw.githubusercontent.com/Souvik7661/MacSight/main/public/downloads/FaceIDMac.zip" -o "$TEMP_ZIP" 2>/dev/null || true
+# Check if local fallback package exists ONLY if executed as a local file, NOT piped via curl
+LOCAL_BUNDLE=""
+if [[ -n "${BASH_SOURCE[0]:-}" && "${BASH_SOURCE[0]}" != "bash" && -f "${BASH_SOURCE[0]}" ]]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+    if [[ -f "$SCRIPT_DIR/downloads/FaceIDMac.zip" ]]; then
+        LOCAL_BUNDLE="$SCRIPT_DIR/downloads/FaceIDMac.zip"
+    elif [[ -f "$SCRIPT_DIR/../public/downloads/FaceIDMac.zip" ]]; then
+        LOCAL_BUNDLE="$SCRIPT_DIR/../public/downloads/FaceIDMac.zip"
     fi
 fi
 
-# If zip still doesn't exist, check local workspace build
-if [[ ! -f "$TEMP_ZIP" ]] && [[ -d "/Users/souvikkundu/Desktop/FaceId/FaceIDMac.app" ]]; then
-    echo -e "${CYAN}[*] Bundling from local workspace release...${NC}"
-    (cd /Users/souvikkundu/Desktop/FaceId && zip -r -q -y "$TEMP_ZIP" FaceIDMac.app)
+if [[ -n "$LOCAL_BUNDLE" ]] && cp "$LOCAL_BUNDLE" "$TEMP_ZIP" 2>/dev/null; then
+    echo -e "${GREEN}[✓] Using local distribution bundle...${NC}"
+else
+    echo -e "${BLUE}[*] Downloading Face ID for Mac package...${NC}"
+    # Download over HTTP from Vercel deployment or GitHub fallback
+    if ! curl -fsSL "$ZIP_URL" -o "$TEMP_ZIP" 2>/dev/null; then
+        echo -e "${YELLOW}[!] Downloading from primary repository...${NC}"
+        curl -fSL "https://raw.githubusercontent.com/Souvik7661/MacSight/main/public/downloads/FaceIDMac.zip" -o "$TEMP_ZIP" 2>/dev/null || true
+    fi
 fi
 
 if [[ ! -f "$TEMP_ZIP" ]]; then
